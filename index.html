@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naqsha — Construction Material &amp; Cost Estimator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy: #0E2A47;
+    --navy-deep: #081A2E;
+    --cyan: #7FC4E0;
+    --cyan-dim: #3F6E85;
+    --paper: #F3EFE2;
+    --paper-line: #D8D0B8;
+    --ink: #1B1D1F;
+    --ink-soft: #4A4E55;
+    --rust: #B0502E;
+    --rust-dim: #8B3E23;
+    --ok-green: #4C7A54;
+    --panel-bg: var(--paper);
+    --panel-text: var(--ink);
+    --page-bg: var(--navy-deep);
+    --hairline: var(--paper-line);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  :root:not([data-theme="light"]){
+    /* default (also used for prefers dark below) */
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --panel-bg: #EDE7D6;
+      --panel-text: #1B1D1F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --panel-bg: #EDE7D6;
+    --panel-text: #1B1D1F;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--page-bg);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection{ background: var(--rust); color: var(--paper); }
+
+  a{ color: inherit; }
+
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- Grid backdrop ---------- */
+  .blueprint-bg{
+    position: relative;
+    background-color: var(--navy);
+    background-image:
+      linear-gradient(rgba(127,196,224,0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(127,196,224,0.09) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  .blueprint-bg.deep{ background-color: var(--navy-deep); }
+
+  /* ---------- Header ---------- */
+  header{
+    padding: 22px 0 18px;
+    border-bottom: 1px solid rgba(127,196,224,0.25);
+  }
+  .brand{
+    display:flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand-mark{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark svg{ flex: none; }
+  .brand-name{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size: 28px;
+    letter-spacing: 0.5px;
+    color: var(--paper);
+    line-height:1;
+  }
+  .brand-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--cyan);
+    letter-spacing: 0.3px;
+  }
+  nav.scale-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--cyan-dim);
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    padding: 64px 0 56px;
+    position: relative;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+  }
+  @media (max-width: 860px){
+    .hero-grid{ grid-template-columns: 1fr; }
+  }
+  .hero h1{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight: 700;
+    font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.03;
+    margin: 0 0 18px;
+    color: var(--paper);
+    max-width: 15ch;
+  }
+  .hero p.lead{
+    font-size: 17px;
+    line-height: 1.6;
+    color: #C9D6DE;
+    max-width: 46ch;
+    margin: 0 0 22px;
+  }
+  .hero-tags{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+    padding: 6px 10px;
+    border-radius: 3px;
+  }
+
+  .hero-sketch{
+    aspect-ratio: 4/3;
+    border: 1px solid var(--cyan-dim);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    background: rgba(127,196,224,0.03);
+  }
+  .hero-sketch svg{ width:100%; height:100%; display:block; }
+  .draw-line{
+    stroke-dasharray: 1400;
+    stroke-dashoffset: 1400;
+    animation: draw 2.6s ease-out forwards;
+  }
+  @keyframes draw{ to{ stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce){
+    .draw-line{ animation: none; stroke-dashoffset: 0; }
+  }
+
+  /* ---------- Section shell ---------- */
+  section.panel-section{
+    padding: 54px 0;
+  }
+  .section-head{
+    display:flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 26px;
+    border-bottom: 1px solid rgba(127,196,224,0.25);
+    padding-bottom: 14px;
+  }
+  .section-num{
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--rust);
+    font-size: 13px;
+  }
+  .section-head h2{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--paper);
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  .section-desc{
+    font-size: 14.5px;
+    color: #B7C4CD;
+    margin: -14px 0 26px;
+    max-width: 60ch;
+  }
+
+  /* ---------- Paper card (form) ---------- */
+  .paper{
+    background: var(--panel-bg);
+    color: var(--panel-text);
+    border-radius: 3px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+    padding: 30px;
+    background-image: repeating-linear-gradient(rgba(27,29,31,0.035) 0 1px, transparent 1px 27px);
+  }
+
+  .field-grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 24px;
+  }
+  @media (max-width: 640px){
+    .field-grid{ grid-template-columns: 1fr; }
+  }
+  .field{ display:flex; flex-direction: column; gap: 7px; }
+  .field.span2{ grid-column: 1 / -1; }
+  .field label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    text-transform: none;
+    color: var(--ink-soft);
+    letter-spacing: 0.2px;
+  }
+  .unit-toggle{
+    display:flex;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    overflow: hidden;
+    width: fit-content;
+  }
+  .unit-toggle button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 9px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .unit-toggle button.active{
+    background: var(--navy);
+    color: var(--paper);
+  }
+  input[type="number"], select, input[type="text"]{
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 11px 12px;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--ink);
+  }
+  input:focus, select:focus, button:focus-visible{
+    outline: 2px solid var(--rust);
+    outline-offset: 1px;
+  }
+  .row-inline{ display:flex; gap: 10px; align-items: center; }
+  .chip-select{ display:flex; gap:8px; flex-wrap: wrap; }
+  .chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 9px 13px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: #fff;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .chip.active{
+    background: var(--rust);
+    border-color: var(--rust);
+    color: #fff;
+  }
+
+  details.rates{
+    margin-top: 24px;
+    border-top: 1px dashed var(--hairline);
+    padding-top: 16px;
+  }
+  details.rates summary{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .rates-grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 18px;
+  }
+  @media (max-width: 760px){ .rates-grid{ grid-template-columns: repeat(2,1fr); } }
+  .rates-grid .field label{ font-size: 11px; }
+  .rates-grid input{ padding: 8px 10px; font-size: 13.5px; }
+
+  .cta-row{
+    margin-top: 28px;
+    display:flex;
+    align-items:center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  button.primary{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.3px;
+    background: var(--rust);
+    color: #fff;
+    border: none;
+    padding: 14px 26px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  button.primary:hover{ background: var(--rust-dim); }
+  .cta-hint{
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ---------- Results ---------- */
+  #results{ display:none; }
+  .totals-strip{
+    display:grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 1px;
+    background: rgba(127,196,224,0.25);
+    border: 1px solid rgba(127,196,224,0.25);
+    margin-bottom: 30px;
+  }
+  @media (max-width: 700px){ .totals-strip{ grid-template-columns: 1fr; } }
+  .totals-strip > div{
+    background: var(--navy);
+    padding: 22px 24px;
+  }
+  .totals-strip .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--cyan);
+    margin-bottom: 8px;
+  }
+  .totals-strip .big{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    color: var(--paper);
+    line-height: 1.05;
+  }
+  .totals-strip .sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: #9FB2BD;
+    margin-top: 6px;
+  }
+
+  table.boq{
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  table.boq caption{ text-align:left; }
+  table.boq th, table.boq td{
+    padding: 13px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--paper-line);
+    font-size: 14.5px;
+  }
+  table.boq thead th{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    border-bottom: 2px solid var(--ink);
+  }
+  table.boq td.num, table.boq th.num{ text-align: right; font-variant-numeric: tabular-nums; font-family:'IBM Plex Mono', monospace; }
+  table.boq tbody tr:hover{ background: rgba(176,80,46,0.06); }
+  table.boq tr.total-row td{
+    border-top: 2px solid var(--ink);
+    border-bottom: none;
+    font-weight: 700;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 15px;
+    padding-top: 16px;
+  }
+  .item-name{ font-weight: 600; }
+  .item-note{ display:block; font-size: 12px; color: var(--ink-soft); font-weight: 400; margin-top:2px; }
+
+  .table-wrap{
+    overflow-x: auto;
+    border-radius: 3px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.28);
+  }
+
+  .assumptions{
+    margin-top: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #93A6B1;
+    line-height: 1.7;
+  }
+
+  /* ---------- Floor plan ---------- */
+  .plan-shell{
+    background: var(--navy-deep);
+    border: 1px solid rgba(127,196,224,0.3);
+    border-radius: 4px;
+    padding: 8px;
+  }
+  .plan-tabs{
+    display:flex;
+    gap: 6px;
+    padding: 10px 10px 0;
+    flex-wrap: wrap;
+  }
+  .plan-tabs button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    background: transparent;
+    color: var(--cyan-dim);
+    border: 1px solid var(--cyan-dim);
+    border-bottom: none;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-radius: 3px 3px 0 0;
+  }
+  .plan-tabs button.active{
+    color: var(--paper);
+    border-color: var(--cyan);
+    background: rgba(127,196,224,0.08);
+  }
+  .plan-canvas{ padding: 4px; }
+  .plan-canvas svg{ width: 100%; height: auto; display:block; }
+  .plan-caption{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: #7C93A0;
+    padding: 12px 16px 16px;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    padding: 40px 0 60px;
+    border-top: 1px solid rgba(127,196,224,0.2);
+  }
+  footer p{
+    font-size: 13px;
+    color: #7C93A0;
+    line-height: 1.7;
+    max-width: 74ch;
+  }
+
+  .visually-hidden{
+    position:absolute; width:1px;height:1px; overflow:hidden; clip:rect(0 0 0 0);
+  }
+</style>
+</head>
+<body>
+
+<div class="blueprint-bg deep">
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+          <rect x="1" y="1" width="32" height="32" rx="2" stroke="#7FC4E0" stroke-width="1.4"/>
+          <path d="M7 25 L7 15 L17 8 L27 15 L27 25 Z" stroke="#7FC4E0" stroke-width="1.4" fill="none"/>
+          <line x1="7" y1="25" x2="27" y2="25" stroke="#B0502E" stroke-width="1.6"/>
+        </svg>
+        <div>
+          <div class="brand-name">NAQSHA</div>
+        </div>
+      </div>
+      <div class="scale-note">EST. QUANTITIES &amp; COST — SOUTH ASIA RESIDENTIAL</div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <h1>Know what your house will cost — down to the last brick.</h1>
+        <p class="lead">Enter your plot size and Naqsha works out the bricks, cement, sand, steel, paint, flooring, kitchen and plaster you'll need — plus a conceptual floor plan sized to fit.</p>
+        <div class="hero-tags">
+          <span class="tag">Sq. yards or sq. ft</span>
+          <span class="tag">1–3 storeys</span>
+          <span class="tag">Editable local rates</span>
+          <span class="tag">Conceptual layout</span>
+        </div>
+      </div>
+      <div class="hero-sketch" aria-hidden="true">
+        <svg viewBox="0 0 400 300">
+          <rect x="0" y="0" width="400" height="300" fill="none"/>
+          <g stroke="#7FC4E0" stroke-width="1.6" fill="none">
+            <rect class="draw-line" x="40" y="40" width="320" height="220"/>
+            <line class="draw-line" x1="40" y1="140" x2="230" y2="140"/>
+            <line class="draw-line" x1="230" y1="40" x2="230" y2="260"/>
+            <line class="draw-line" x1="230" y1="190" x2="360" y2="190"/>
+            <line class="draw-line" x1="290" y1="40" x2="290" y2="140"/>
+          </g>
+          <g stroke="#B0502E" stroke-width="1.2" fill="none" stroke-dasharray="3 3">
+            <line class="draw-line" x1="40" y1="24" x2="360" y2="24"/>
+            <line class="draw-line" x1="24" y1="40" x2="24" y2="260"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="9" fill="#7FC4E0">
+            <text x="130" y="95">LOUNGE</text>
+            <text x="255" y="95">BED 1</text>
+            <text x="255" y="170">BATH</text>
+            <text x="130" y="215">DINING</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="blueprint-bg">
+<div class="wrap">
+  <section class="panel-section" id="input-section">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2>Describe the house</h2>
+    </div>
+    <p class="section-desc">These numbers drive every quantity below. Change the city or finish tier and the unit rates update — you can still type over any of them.</p>
+
+    <div class="paper">
+      <div class="field-grid">
+        <div class="field">
+          <label for="areaValue">Plot / land area</label>
+          <div class="row-inline">
+            <input type="number" id="areaValue" min="1" step="1" value="120" style="flex:1">
+            <div class="unit-toggle" role="group" aria-label="Area unit">
+              <button type="button" id="unitYd" class="active">sq yd</button>
+              <button type="button" id="unitFt">sq ft</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="coverage">Construction coverage per floor</label>
+          <div class="row-inline">
+            <input type="number" id="coverage" min="40" max="100" step="1" value="80" style="flex:1">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft)">% of plot</span>
+          </div>
+        </div>
+
+        <div class="field span2">
+          <label>Number of storeys</label>
+          <div class="chip-select" id="storeyChips">
+            <button type="button" class="chip active" data-val="1">Single storey</button>
+            <button type="button" class="chip" data-val="1.5">One-and-half</button>
+            <button type="button" class="chip" data-val="2">Double storey</button>
+            <button type="button" class="chip" data-val="3">Triple storey</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="citySelect">City / region rates</label>
+          <select id="citySelect">
+            <option value="karachi" selected>Karachi &amp; Sindh</option>
+            <option value="lahore">Lahore &amp; Central Punjab</option>
+            <option value="islamabad">Islamabad / Rawalpindi</option>
+            <option value="custom">Custom — I'll enter my own</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Finish tier</label>
+          <div class="chip-select" id="tierChips">
+            <button type="button" class="chip" data-val="economy">Economy</button>
+            <button type="button" class="chip active" data-val="standard">Standard</button>
+            <button type="button" class="chip" data-val="premium">Premium</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="rates">
+        <summary>Adjust local material rates (optional)</summary>
+        <div class="rates-grid">
+          <div class="field">
+            <label for="rBrick">Brick, Rs / piece</label>
+            <input type="number" id="rBrick" step="0.5">
+          </div>
+          <div class="field">
+            <label for="rCement">Cement, Rs / 50kg bag</label>
+            <input type="number" id="rCement" step="10">
+          </div>
+          <div class="field">
+            <label for="rSand">Sand, Rs / cu.ft</label>
+            <input type="number" id="rSand" step="1">
+          </div>
+          <div class="field">
+            <label for="rSteel">Steel rebar, Rs / kg</label>
+            <input type="number" id="rSteel" step="1">
+          </div>
+          <div class="field">
+            <label for="rPaint">Paint, Rs / sq.ft covered</label>
+            <input type="number" id="rPaint" step="1">
+          </div>
+          <div class="field">
+            <label for="rFloor">Flooring (tile/marble), Rs / sq.ft</label>
+            <input type="number" id="rFloor" step="5">
+          </div>
+          <div class="field">
+            <label for="rKitchen">Kitchen fit-out, Rs / sq.ft of kitchen</label>
+            <input type="number" id="rKitchen" step="50">
+          </div>
+          <div class="field">
+            <label for="rPlaster">Plaster, Rs / sq.ft (both faces)</label>
+            <input type="number" id="rPlaster" step="1">
+          </div>
+        </div>
+      </details>
+
+      <div class="cta-row">
+        <button class="primary" id="calcBtn">Generate estimate</button>
+        <span class="cta-hint">Materials + conceptual floor plan below</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-section" id="results">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2>Bill of quantities</h2>
+    </div>
+    <p class="section-desc" id="areaSummary"></p>
+
+    <div class="totals-strip">
+      <div>
+        <div class="label">TOTAL MATERIAL COST</div>
+        <div class="big" id="totalCostBig">—</div>
+        <div class="sub" id="totalCostLac">—</div>
+      </div>
+      <div>
+        <div class="label">COVERED AREA (ALL FLOORS)</div>
+        <div class="big" id="totalAreaBig">—</div>
+        <div class="sub">square feet</div>
+      </div>
+      <div>
+        <div class="label">COST PER SQ.FT</div>
+        <div class="big" id="perSqftBig">—</div>
+        <div class="sub">materials only, before labour</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="boq" id="boqTable">
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th class="num">Quantity</th>
+            <th class="num">Rate</th>
+            <th class="num">Cost</th>
+          </tr>
+        </thead>
+        <tbody id="boqBody"></tbody>
+      </table>
+    </div>
+
+    <p class="assumptions" id="assumptions"></p>
+  </section>
+
+  <section class="panel-section" id="plan-section" style="display:none">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2>Conceptual floor plan</h2>
+    </div>
+    <p class="section-desc">A proportional room layout generated from your plot size and storey count — useful for sizing rooms, not for permits or construction. Have an architect prepare working drawings before you build.</p>
+
+    <div class="plan-shell">
+      <div class="plan-tabs" id="planTabs"></div>
+      <div class="plan-canvas" id="planCanvas"></div>
+      <div class="plan-caption" id="planCaption"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong style="color:#9FB2BD">About these numbers.</strong> Naqsha uses common rule-of-thumb ratios used by South Asian contractors for early-stage budgeting (e.g. ~8.5 bricks, 0.42 cement bags, 3.5 kg steel per sq.ft of covered area). Actual quantities depend on your structural design, soil report, wall thickness and finishes. Figures exclude labour, doors &amp; windows, electrical, plumbing, sanitary fittings, boundary wall and approvals — these typically add 35–60% on top of material cost. Material rates are editable because they change often and vary by city and supplier; treat every figure here as a planning estimate, and get quotes from a local contractor or engineer before budgeting a real project.</p>
+  </footer>
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- state ---------------- */
+  var state = { unit: 'yd' };
+
+  /* ---------------- number formatting (South Asian grouping) ---------------- */
+  function groupSA(numStr){
+    if(numStr.length <= 3) return numStr;
+    var last3 = numStr.slice(-3);
+    var rest = numStr.slice(0, -3);
+    rest = rest.replace(/\B(?=(\d{2})+(?!\d)$)/g, ',');
+    return rest + ',' + last3;
+  }
+  function fmtInt(n){
+    var neg = n < 0; n = Math.round(Math.abs(n));
+    return (neg?'-':'') + groupSA(String(n));
+  }
+  function fmtRs(n){ return 'Rs ' + fmtInt(n); }
+  function fmtLac(n){
+    if(n >= 10000000) return '≈ Rs ' + (n/10000000).toFixed(2) + ' crore';
+    return '≈ Rs ' + (n/100000).toFixed(1) + ' lac';
+  }
+  function fmtNum(n, d){
+    d = d || 0;
+    return Number(n).toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+  }
+
+  /* ---------------- rate presets ---------------- */
+  var cityRates = {
+    karachi:   { brick: 18,   cement: 1550, sand: 65,  steel: 230 },
+    lahore:    { brick: 17.5, cement: 1500, sand: 70,  steel: 228 },
+    islamabad: { brick: 24.5, cement: 1560, sand: 110, steel: 230 },
+    custom:    { brick: 18,   cement: 1550, sand: 65,  steel: 230 }
+  };
+  var tierRates = {
+    economy:  { paint: 22, floor: 110, kitchen: 2800, plaster: 45 },
+    standard: { paint: 30, floor: 180, kitchen: 4000, plaster: 55 },
+    premium:  { paint: 45, floor: 320, kitchen: 6500, plaster: 65 }
+  };
+
+  /* ---------------- fixed construction norms (rule-of-thumb) ---------------- */
+  var NORMS = {
+    bricksPerSqft: 8.5,
+    cementBagsPerSqft: 0.42,
+    sandCftPerSqft: 0.9,
+    steelKgPerSqft: 3.5,
+    flooringFraction: 0.75,
+    kitchenFraction: 0.06,
+    plasterMultiplier: 2.0,
+    cftToMT: 0.0453
+  };
+
+  /* ---------------- element refs ---------------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var areaValue = $('areaValue'), unitYd = $('unitYd'), unitFt = $('unitFt'), coverage = $('coverage');
+  var citySelect = $('citySelect');
+  var rBrick=$('rBrick'), rCement=$('rCement'), rSand=$('rSand'), rSteel=$('rSteel'),
+      rPaint=$('rPaint'), rFloor=$('rFloor'), rKitchen=$('rKitchen'), rPlaster=$('rPlaster');
+
+  function currentStorey(){
+    var active = document.querySelector('#storeyChips .chip.active');
+    return parseFloat(active.getAttribute('data-val'));
+  }
+  function currentTier(){
+    var active = document.querySelector('#tierChips .chip.active');
+    return active.getAttribute('data-val');
+  }
+
+  function wireChips(containerId){
+    var container = $(containerId);
+    container.addEventListener('click', function(e){
+      var btn = e.target.closest('.chip');
+      if(!btn) return;
+      Array.prototype.forEach.call(container.querySelectorAll('.chip'), function(c){ c.classList.remove('active'); });
+      btn.classList.add('active');
+      if(containerId === 'tierChips') applyTierDefaults();
+    });
+  }
+  wireChips('storeyChips');
+  wireChips('tierChips');
+
+  unitYd.addEventListener('click', function(){ setUnit('yd'); });
+  unitFt.addEventListener('click', function(){ setUnit('ft'); });
+  function setUnit(u){
+    if(u === state.unit) return;
+    var val = parseFloat(areaValue.value) || 0;
+    if(u === 'ft' && state.unit === 'yd') val = Math.round(val * 9);
+    if(u === 'yd' && state.unit === 'ft') val = Math.round(val / 9);
+    state.unit = u;
+    areaValue.value = val;
+    unitYd.classList.toggle('active', u === 'yd');
+    unitFt.classList.toggle('active', u === 'ft');
+  }
+
+  function applyCityDefaults(){
+    var c = cityRates[citySelect.value] || cityRates.karachi;
+    rBrick.value = c.brick; rCement.value = c.cement; rSand.value = c.sand; rSteel.value = c.steel;
+  }
+  function applyTierDefaults(){
+    var t = tierRates[currentTier()];
+    rPaint.value = t.paint; rFloor.value = t.floor; rKitchen.value = t.kitchen; rPlaster.value = t.plaster;
+  }
+  citySelect.addEventListener('change', applyCityDefaults);
+  applyCityDefaults();
+  applyTierDefaults();
+
+  /* ---------------- calculation ---------------- */
+  function plotAreaSqFt(){
+    var v = parseFloat(areaValue.value) || 0;
+    return state.unit === 'yd' ? v * 9 : v;
+  }
+
+  $('calcBtn').addEventListener('click', function(){
+    var plotSqFt = plotAreaSqFt();
+    if(plotSqFt <= 0){ areaValue.focus(); return; }
+    var cov = Math.min(100, Math.max(30, parseFloat(coverage.value) || 80)) / 100;
+    var storeys = currentStorey();
+    var wholeFloors = Math.ceil(storeys);
+    var coveredPerFloor = plotSqFt * cov;
+    var totalArea = coveredPerFloor * storeys; // 1.5 storeys => half-covered top floor
+
+    var rates = {
+      brick: parseFloat(rBrick.value)||0, cement: parseFloat(rCement.value)||0,
+      sand: parseFloat(rSand.value)||0, steel: parseFloat(rSteel.value)||0,
+      paint: parseFloat(rPaint.value)||0, floor: parseFloat(rFloor.value)||0,
+      kitchen: parseFloat(rKitchen.value)||0, plaster: parseFloat(rPlaster.value)||0
+    };
+
+    var bricksCount = totalArea * NORMS.bricksPerSqft;
+    var bricksCost = bricksCount * rates.brick;
+
+    var cementBags = totalArea * NORMS.cementBagsPerSqft;
+    var cementCost = cementBags * rates.cement;
+
+    var sandCft = totalArea * NORMS.sandCftPerSqft;
+    var sandMT = sandCft * NORMS.cftToMT;
+    var sandCost = sandCft * rates.sand;
+
+    var steelKg = totalArea * NORMS.steelKgPerSqft;
+    var steelMT = steelKg / 1000;
+    var steelCost = steelKg * rates.steel;
+
+    var paintCost = totalArea * rates.paint;
+
+    var flooringArea = totalArea * NORMS.flooringFraction;
+    var marbleCost = flooringArea * rates.floor;
+
+    var kitchenArea = totalArea * NORMS.kitchenFraction;
+    var kitchenCost = kitchenArea * rates.kitchen;
+
+    var plasterArea = totalArea * NORMS.plasterMultiplier;
+    var plasterCost = plasterArea * rates.plaster;
+
+    var grandTotal = bricksCost + cementCost + sandCost + steelCost + paintCost + marbleCost + kitchenCost + plasterCost;
+
+    /* ---- render totals ---- */
+    $('totalCostBig').textContent = fmtRs(grandTotal);
+    $('totalCostLac').textContent = fmtLac(grandTotal);
+    $('totalAreaBig').textContent = fmtInt(totalArea);
+    $('perSqftBig').textContent = fmtRs(grandTotal/totalArea);
+    $('areaSummary').textContent = fmtInt(plotSqFt/9) + ' sq.yd plot (' + fmtInt(plotSqFt) + ' sq.ft), ' +
+      (storeys===1?'single storey':storeys===1.5?'one-and-half storeys':storeys===2?'double storey':'triple storey') +
+      ', ' + Math.round(cov*100) + '% coverage per floor \u2192 ' + fmtInt(totalArea) + ' sq.ft total covered area.';
+
+    var rows = [
+      {name:'Bricks / blocks', note:NORMS.bricksPerSqft+' per sq.ft covered area', qty: fmtInt(bricksCount)+' pcs', rate: fmtRs(rates.brick)+'/pc', cost: bricksCost},
+      {name:'Cement', note:NORMS.cementBagsPerSqft+' bags per sq.ft', qty: fmtInt(cementBags)+' bags (50kg)', rate: fmtRs(rates.cement)+'/bag', cost: cementCost},
+      {name:'Sand', note:NORMS.sandCftPerSqft+' cu.ft per sq.ft', qty: fmtInt(sandCft)+' cu.ft \u2248 '+fmtNum(sandMT,1)+' MT', rate: fmtRs(rates.sand)+'/cu.ft', cost: sandCost},
+      {name:'Steel (rebar)', note:NORMS.steelKgPerSqft+' kg per sq.ft', qty: fmtNum(steelMT,2)+' MT ('+fmtInt(steelKg)+' kg)', rate: fmtRs(rates.steel)+'/kg', cost: steelCost},
+      {name:'Paint / colour', note:'interior + exterior, covered area', qty: fmtInt(totalArea)+' sq.ft', rate: fmtRs(rates.paint)+'/sq.ft', cost: paintCost},
+      {name:'Marble / tile flooring', note: Math.round(NORMS.flooringFraction*100)+'% of covered area', qty: fmtInt(flooringArea)+' sq.ft', rate: fmtRs(rates.floor)+'/sq.ft', cost: marbleCost},
+      {name:'Kitchen fit-out', note: Math.round(NORMS.kitchenFraction*100)+'% of covered area', qty: fmtInt(kitchenArea)+' sq.ft', rate: fmtRs(rates.kitchen)+'/sq.ft', cost: kitchenCost},
+      {name:'Plaster', note: NORMS.plasterMultiplier+'\u00d7 covered area, both faces', qty: fmtInt(plasterArea)+' sq.ft', rate: fmtRs(rates.plaster)+'/sq.ft', cost: plasterCost}
+    ];
+    var body = $('boqBody');
+    body.innerHTML = '';
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td><span class="item-name">'+r.name+'</span><span class="item-note">'+r.note+'</span></td>' +
+        '<td class="num">'+r.qty+'</td><td class="num">'+r.rate+'</td><td class="num">'+fmtRs(r.cost)+'</td>';
+      body.appendChild(tr);
+    });
+    var totalTr = document.createElement('tr');
+    totalTr.className = 'total-row';
+    totalTr.innerHTML = '<td>Total material cost</td><td class="num"></td><td class="num"></td><td class="num">'+fmtRs(grandTotal)+'</td>';
+    body.appendChild(totalTr);
+
+    $('assumptions').textContent = 'Rule-of-thumb norms used: bricks '+NORMS.bricksPerSqft+'/sq.ft, cement '+NORMS.cementBagsPerSqft+' bags/sq.ft, sand '+NORMS.sandCftPerSqft+' cu.ft/sq.ft, steel '+NORMS.steelKgPerSqft+' kg/sq.ft, flooring '+Math.round(NORMS.flooringFraction*100)+'% of area, plaster '+NORMS.plasterMultiplier+'\u00d7 area. Excludes labour, doors/windows, electrical, plumbing and approvals.';
+
+    $('results').style.display = 'block';
+
+    /* ---- floor plan ---- */
+    buildFloorPlan(coveredPerFloor, wholeFloors, storeys);
+    $('plan-section').style.display = 'block';
+
+    $('results').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  /* ---------------- floor plan generator ---------------- */
+  function roomProgram(areaSqft, floorIndex, totalFloors){
+    if(totalFloors === 1 || floorIndex === 0){
+      if(totalFloors === 1){
+        if(areaSqft < 650){
+          return [
+            {n:'Lounge', w:0.20},{n:'Bedroom', w:0.19},{n:'Kitchen', w:0.13},
+            {n:'Bath', w:0.08},{n:'Store', w:0.07},{n:'Verandah', w:0.14},{n:'Lobby', w:0.19}
+          ];
+        } else if(areaSqft < 1300){
+          return [
+            {n:'Lounge', w:0.15},{n:'Dining', w:0.10},{n:'Bedroom 1', w:0.13},{n:'Bedroom 2', w:0.12},
+            {n:'Kitchen', w:0.10},{n:'Bath 1', w:0.06},{n:'Bath 2', w:0.05},{n:'Store', w:0.05},
+            {n:'Verandah', w:0.10},{n:'Lobby', w:0.14}
+          ];
+        } else {
+          return [
+            {n:'Drawing', w:0.12},{n:'Lounge', w:0.11},{n:'Dining', w:0.09},{n:'Master Bed', w:0.13},
+            {n:'Bedroom 2', w:0.11},{n:'Bedroom 3', w:0.10},{n:'Kitchen', w:0.09},{n:'Bath 1', w:0.05},
+            {n:'Bath 2', w:0.05},{n:'Store', w:0.05},{n:'Verandah', w:0.06},{n:'Lobby', w:0.04}
+          ];
+        }
+      }
+      // ground floor of a multi-storey house
+      return [
+        {n:'Drawing Room', w:0.15},{n:'Lounge', w:0.12},{n:'Dining', w:0.10},{n:'Kitchen', w:0.11},
+        {n:'Guest Bed', w:0.12},{n:'Bath', w:0.06},{n:'Store', w:0.05},{n:'Stairs', w:0.08},
+        {n:'Verandah', w:0.11},{n:'Lobby', w:0.10}
+      ];
+    }
+    // upper floors
+    var lastFloor = floorIndex === totalFloors - 1;
+    var rooms = [
+      {n:'Master Bed', w:0.17},{n:'Master Bath', w:0.06},{n:'Bedroom 2', w:0.13},{n:'Bedroom 3', w:0.13},
+      {n:'Bath', w:0.06},{n:'Family Lounge', w:0.13},{n:'Dressing', w:0.05},{n:'Stairs / Landing', w:0.08},
+      {n:'Balcony', w:0.10},{n:'Store', w:0.05}
+    ];
+    if(lastFloor && totalFloors >= 3){
+      rooms = rooms.filter(function(r){ return r.n !== 'Bedroom 3'; });
+      rooms.push({n:'Terrace', w:0.13});
+    }
+    return rooms;
+  }
+
+  function sliceLayout(rooms, x, y, w, h, dir){
+    if(rooms.length === 1){
+      rooms[0].x=x; rooms[0].y=y; rooms[0].w=w; rooms[0].h=h;
+      return [rooms[0]];
+    }
+    var total = rooms.reduce(function(s,r){return s+r.w0;}, 0);
+    var acc = 0, splitIdx = 1;
+    for(var i=0;i<rooms.length;i++){
+      acc += rooms[i].w0;
+      if(acc >= total/2){ splitIdx = Math.max(1, i+1); break; }
+    }
+    var groupA = rooms.slice(0, splitIdx), groupB = rooms.slice(splitIdx);
+    if(groupB.length === 0){ groupB = [groupA.pop()]; }
+    var wA = groupA.reduce(function(s,r){return s+r.w0;},0);
+    var wB = groupB.reduce(function(s,r){return s+r.w0;},0);
+    var frac = wA / (wA + wB);
+    var out = [];
+    if(dir === 'v'){
+      var splitW = w * frac;
+      out = out.concat(sliceLayout(groupA, x, y, splitW, h, 'h'));
+      out = out.concat(sliceLayout(groupB, x+splitW, y, w-splitW, h, 'h'));
+    } else {
+      var splitH = h * frac;
+      out = out.concat(sliceLayout(groupA, x, y, w, splitH, 'v'));
+      out = out.concat(sliceLayout(groupB, x, y+splitH, w, h-splitH, 'v'));
+    }
+    return out;
+  }
+
+  function svgForFloor(areaSqft, floorIndex, totalFloors, label){
+    var ratio = 1.35; // depth:width
+    var widthFt = Math.sqrt(areaSqft / ratio);
+    var depthFt = areaSqft / widthFt;
+
+    var rooms = roomProgram(areaSqft, floorIndex, totalFloors).map(function(r){ return {n:r.n, w0:r.w}; });
+    var totalW = rooms.reduce(function(s,r){return s+r.w0;},0);
+    rooms.forEach(function(r){ r.w0 = r.w0/totalW; });
+
+    var VBW = 900, VBH = VBW * (depthFt/widthFt);
+    var margin = 46;
+    var innerW = VBW, innerH = VBH;
+    var placed = sliceLayout(rooms.slice(), 0, 0, innerW, innerH, 'v');
+
+    var svg = '<svg viewBox="0 0 '+(VBW+margin*2)+' '+(VBH+margin*2+30)+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Conceptual floor plan for '+label+'">';
+    svg += '<rect x="0" y="0" width="100%" height="100%" fill="#081A2E"/>';
+    svg += '<g transform="translate('+margin+','+margin+')">';
+
+    placed.forEach(function(r){
+      var areaLabel = Math.round(r.w0 * areaSqft);
+      svg += '<rect x="'+r.x.toFixed(1)+'" y="'+r.y.toFixed(1)+'" width="'+r.w.toFixed(1)+'" height="'+r.h.toFixed(1)+'" fill="rgba(127,196,224,0.045)" stroke="#7FC4E0" stroke-width="2"/>';
+      var cx = r.x + r.w/2, cy = r.y + r.h/2;
+      var showLabel = r.w > 55 && r.h > 34;
+      if(showLabel){
+        svg += '<text x="'+cx.toFixed(1)+'" y="'+(cy-6).toFixed(1)+'" font-family="IBM Plex Mono, monospace" font-size="13" fill="#E8EEF1" text-anchor="middle">'+r.n+'</text>';
+        svg += '<text x="'+cx.toFixed(1)+'" y="'+(cy+12).toFixed(1)+'" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#7FC4E0" text-anchor="middle">'+areaLabel+' sq.ft</text>';
+      }
+    });
+
+    // outer dimension lines
+    svg += '<line x1="0" y1="-14" x2="'+innerW+'" y2="-14" stroke="#B0502E" stroke-width="1" stroke-dasharray="4 3"/>';
+    svg += '<text x="'+(innerW/2)+'" y="-20" font-family="IBM Plex Mono, monospace" font-size="12" fill="#B0502E" text-anchor="middle">'+Math.round(widthFt)+' ft</text>';
+    svg += '<line x1="-14" y1="0" x2="-14" y2="'+innerH+'" stroke="#B0502E" stroke-width="1" stroke-dasharray="4 3"/>';
+    svg += '<text x="-20" y="'+(innerH/2)+'" font-family="IBM Plex Mono, monospace" font-size="12" fill="#B0502E" text-anchor="middle" transform="rotate(-90 -20 '+(innerH/2)+')">'+Math.round(depthFt)+' ft</text>';
+
+    svg += '</g></svg>';
+    return svg;
+  }
+
+  function buildFloorPlan(coveredPerFloor, wholeFloors, storeys){
+    var tabs = $('planTabs'), canvas = $('planCanvas'), caption = $('planCaption');
+    tabs.innerHTML = '';
+    var floors = [];
+    for(var i=0;i<wholeFloors;i++){
+      var isLastHalf = (storeys % 1 !== 0) && (i === wholeFloors - 1);
+      var area = isLastHalf ? coveredPerFloor * 0.5 : coveredPerFloor;
+      var label = wholeFloors === 1 ? 'Ground Floor' : (i === 0 ? 'Ground Floor' : (isLastHalf ? 'Top Floor (half)' : 'Floor ' + (i+1)));
+      floors.push({label: label, area: area, index: i});
+    }
+    floors.forEach(function(f, idx){
+      var btn = document.createElement('button');
+      btn.textContent = f.label;
+      if(idx === 0) btn.classList.add('active');
+      btn.addEventListener('click', function(){
+        Array.prototype.forEach.call(tabs.children, function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        render(f);
+      });
+      tabs.appendChild(btn);
+    });
+    function render(f){
+      canvas.innerHTML = svgForFloor(f.area, f.index, wholeFloors, f.label);
+      caption.textContent = f.label + ' \u2014 approx ' + fmtInt(f.area) + ' sq.ft footprint. Room sizes are proportional, not measured; confirm structural spans with an engineer.';
+    }
+    render(floors[0]);
+  }
+
+})();
+</script>
+</body>
+</html>
